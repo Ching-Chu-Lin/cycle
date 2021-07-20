@@ -43,29 +43,6 @@ def parse_input_file(input_file_path):
         return graph, type1, type2_util, type2_edge_constraint, num_transfer
 
 
-def calculate_distance_in_cycle(graph, cycle):
-    # init distance
-    num_vertex = len(graph)
-    cycle_distance = np.full((num_vertex, num_vertex), np.inf)
-
-    np_cycle = np.array(cycle)
-
-    for start in graph:
-        for end in graph:
-            start_indices = np.where(np_cycle == start)[0]
-            end_indices = np.where(np_cycle == end)[0]
-
-            if start_indices.shape == (0,) or end_indices.shape == (0,):
-                # start_index / end_index not in cycle
-                continue
-
-            d = end_indices - start_indices[:, np.newaxis]
-            d[d < 0] += len(np_cycle)
-            cycle_distance[start][end] = d.min()
-
-    return cycle_distance
-
-
 def merge_two_cycles(cycle1, cycle2):
     if cycle1 == cycle2:
         return
@@ -175,8 +152,10 @@ def main(args):
             #lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
             # print(lst[0].intersection(*lst))
 
-            type2_ans = graph.type2_check_satisfy(
+            type2_ans = graph.type2_max(
                 one_combination, type2_util, type2_edge_constraint)
+            # type2_ans = graph.type2_sum(
+            #     one_combination, type2_util, type2_edge_constraint)
 
             if type2_ans == None:
                 continue

@@ -168,7 +168,7 @@ class Graph():
         return None
 
     # type2: check selected cycle satisfy
-    def type2_check_satisfy(self, cycles, type2_util, type2_edge_constraint):
+    def type2_sum(self, cycles, type2_util, type2_edge_constraint):
 
         # inner function
         def find_max_cycle_capacity(cycle, capacity_left):
@@ -232,6 +232,79 @@ class Graph():
                             for u, v in zip(cycle[src_index:]+cycle[:des_index], cycle[src_index+1:]+cycle[:des_index+1]):
                                 cycle_util[(u, v)] += util
                             type2_util_left[(src_vertex, des_vertex)] = 0
+
+            if len(cycle_util.values()) == 0:
+                # no route on this cycle
+                return None
+
+            # assign util = cycle_util.max() to this cycle
+            for u, v in zip(cycle, cycle[1:] + cycle[:1]):
+                capacity_left[(u, v)] = round(
+                    capacity_left[(u, v)]-max(cycle_util.values()), 5)
+            satisfying_cycle_cap.append((cycle, max(cycle_util.values())))
+
+        if (np.array(list(type2_util_left.values())) == 0).all():
+            return satisfying_cycle_cap
+        return None
+
+    # type2: selected cycle & max expected
+    def type2_max(self, cycles, type2_util, type2_edge_constraint):
+
+        # inner function
+        def find_max_cycle_capacity(cycle, capacity_left):
+            max_capacity = float("inf")
+            for u, v in zip(cycle, cycle[1:] + cycle[:1]):
+                if capacity_left[(u, v)] < max_capacity:
+                    max_capacity = capacity_left[(u, v)]
+            return max_capacity
+
+        # init
+        type2_util_left = copy.deepcopy(type2_util)
+        capacity_left = copy.deepcopy(self.edges)
+        satisfying_cycle_cap = []
+
+        for cycle in cycles:
+
+            max_capacity = find_max_cycle_capacity(cycle, capacity_left)
+            cycle_util = collections.defaultdict(float)
+
+            for src_des_tuple, util in type2_util_left.items():
+                src_vertex, des_vertex = src_des_tuple
+                if src_vertex not in cycle or des_vertex not in cycle:
+                    continue
+                if util == 0:
+                    continue
+
+                # find a path on a cycle to serve the (src_vertex, des_vertex) pair
+                src_indices = np.where(np.array(cycle) == src_vertex)[0]
+                des_indices = np.where(np.array(cycle) == des_vertex)[0]
+
+                d = des_indices - src_indices[:, np.newaxis]
+                d[d < 0] += len(cycle)  # d : edge difference
+                # 2d arg sort
+                row, col = np.unravel_index(np.argsort(d, axis=None), d.shape)
+
+                for r, c in zip(row, col):
+                    if d[r][c] > type2_edge_constraint[(src_vertex, des_vertex)]:
+                        break
+
+                    src_index = src_indices[r]
+                    des_index = des_indices[c]
+
+                    # check enough
+                    if util > max_capacity:
+                        continue
+
+                    if src_index < des_index:
+                        for u, v in zip(cycle[src_index:des_index], cycle[src_index+1:des_index+1]):
+                            if cycle_util[(u, v)] < util:
+                                cycle_util[(u, v)] = util
+                        type2_util_left[(src_vertex, des_vertex)] = 0
+                    else:
+                        for u, v in zip(cycle[src_index:]+cycle[:des_index], cycle[src_index+1:]+cycle[:des_index+1]):
+                            if cycle_util[(u, v)] < util:
+                                cycle_util[(u, v)] = util
+                        type2_util_left[(src_vertex, des_vertex)] = 0
 
             if len(cycle_util.values()) == 0:
                 # no route on this cycle
