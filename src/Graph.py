@@ -2,6 +2,8 @@ import collections
 import copy
 import numpy as np
 
+from . import utils
+
 
 class Graph():
     def __init__(self, num_vertex):
@@ -28,53 +30,44 @@ class Graph():
                 if next_state == end:
                     yield path+[next_state]
                     continue
-
                 elif next_state in path:  # no more loop
                     continue
-
                 current.append((next_state, path+[next_state]))
 
     def get_unique_cycles(self):
         # find small cycles
         cycles = [path for node in range(len(self.vertices))
                   for path in self.dfs(node, node)]
-
         # pop last duplicate vertex
         for c in cycles:
             c.pop()
-
-        # delete same cycle
-        for c in cycles:
-            for shift in range(1, len(c)):
-                same_cycle = collections.deque(c)
-                same_cycle.rotate(shift)
-                same_cycle = list(same_cycle)
-                if same_cycle in cycles:
-                    cycles.remove(same_cycle)
-
+        cycles = utils.delete_same_cycle(cycles)
         return cycles
+
+    def check_path_enough_capacity(self, path, util):
+        for u, v in zip(path, path[1:]):
+            if self.edges[(u, v)] < util:
+                return False
+        return True
+
+    def take_path(self, path, util):
+        for u, v in zip(path, path[1:]):
+            self.edges[(u, v)] = round(self.edges[(u, v)] - util, 5)
+            if self.edges[(u, v)] == 0:
+                self.graph[u].remove(v)
+                self.edges.pop((u, v), None)
+        return
 
     # type1: shortest path
     def type1_shortest(self, type1):
         satisfying_routes = []
         for src_des_tuple, util in type1.items():
-            paths = [path for path in self.dfs(*src_des_tuple)]
             # find a path for this route: (src, des) util
+            paths = [path for path in self.dfs(*src_des_tuple)]
 
             for path in paths:
-                # check enough capacity
-                enough_capacity = True
-                for u, v in zip(path, path[1:]):
-                    if self.edges[(u, v)] < util:
-                        enough_capacity = False
-                        break
-
-                if enough_capacity == True:
-                    for u, v in zip(path, path[1:]):
-                        self.edges[(u, v)] = round(
-                            self.edges[(u, v)] - util, 5)
-                        if self.edges[(u, v)] == 0:
-                            self.graph[u].remove(v)
+                if self.check_path_enough_capacity(path, util) == True:
+                    self.take_path(path, util)
                     satisfying_routes.append((path, util))
                     break
 
@@ -91,33 +84,20 @@ class Graph():
 
             min_index = -1
             min_used_percentage = float("inf")
-
             for i, path in enumerate(paths):
-                # check enough capacity
-                enough_capacity = True
-                for u, v in zip(path, path[1:]):
-                    if self.edges[(u, v)] < util:
-                        enough_capacity = False
-                        break
-
-                if enough_capacity == True:
-
+                if self.check_path_enough_capacity(path, util) == True:
                     all_capacity = 0
                     for u, v in zip(path, path[1:]):
                         all_capacity += self.edges[(u, v)]
-                    if (util*(len(path)-1)/all_capacity) < min_used_percentage:
-                        min_used_percentage = (util*(len(path)-1)/all_capacity)
+                    used_percentage = util*(len(path)-1)/all_capacity
+                    if used_percentage < min_used_percentage:
+                        min_used_percentage = used_percentage
                         min_index = i
 
-            # cannot server for this src_des_tuple (not enough capacity)
+            # cannot serve
             if min_index == -1:
                 break
-
-            for u, v in zip(paths[min_index], paths[min_index][1:]):
-                self.edges[(u, v)] = round(
-                    self.edges[(u, v)] - util, 5)
-                if self.edges[(u, v)] == 0:
-                    self.graph[u].remove(v)
+            self.take_path(paths[min_index], util)
             satisfying_routes.append((paths[min_index], util))
 
         if len(satisfying_routes) == len(type1.keys()):
@@ -133,16 +113,8 @@ class Graph():
 
             min_max_index = -1
             min_max_percentage = float("inf")
-
             for i, path in enumerate(paths):
-                # check enough capacity
-                enough_capacity = True
-                for u, v in zip(path, path[1:]):
-                    if self.edges[(u, v)] < util:
-                        enough_capacity = False
-                        break
-
-                if enough_capacity == True:
+                if self.check_path_enough_capacity(path, util) == True:
                     max_percentage = 0
                     for u, v in zip(path, path[1:]):
                         if max_percentage < (util/self.edges[(u, v)]):
@@ -152,16 +124,51 @@ class Graph():
                         min_max_percentage = max_percentage
                         min_max_index = i
 
-            # cannot server for this src_des_tuple (not enough capacity)
+            # cannot serve
             if min_max_index == -1:
                 break
-
-            for u, v in zip(paths[min_max_index], paths[min_max_index][1:]):
-                self.edges[(u, v)] = round(
-                    self.edges[(u, v)] - util, 5)
-                if self.edges[(u, v)] == 0:
-                    self.graph[u].remove(v)
+            self.take_path(paths[min_max_index], util)
             satisfying_routes.append((paths[min_max_index], util))
+
+        if len(satisfying_routes) == len(type1.keys()):
+            return satisfying_routes
+        return None
+
+    # type1: least conflict with type2
+    def type1_least_conflict(self, type1, type2):
+        satisfying_routes = []
+        for src_des_tuple, util in type1.items():
+            # find a path for this route: (src, des) util
+            paths = [path for path in self.dfs(*src_des_tuple)]
+
+            conflict = []
+            valid_index = []
+            for i, path in enumerate(paths):
+                if self.check_path_enough_capacity(path, util) == True:
+                    valid_index.append(i)
+                    # calculate conflict value
+                    c = 0
+                    for src_des_tuple2, util2 in type2.items():
+                        src_vertex2, des_vertex2 = src_des_tuple2
+                        if src_vertex2 not in path or des_vertex2 not in path:
+                            continue
+                        src_indices = np.where(
+                            np.array(path) == src_vertex2)[0]
+                        des_indices = np.where(
+                            np.array(path) == des_vertex2)[0]
+
+                        max_edge_difference = max(
+                            des_indices) - min(src_indices)
+                        max_edge_difference = max(max_edge_difference, 0)
+                        c += util2 * max_edge_difference
+                    conflict.append(c)
+
+            # cannot serve
+            if len(valid_index) == 0:
+                break
+            path = paths[valid_index[np.argsort(conflict)[0]]]
+            self.take_path(path, util)
+            satisfying_routes.append((path, util))
 
         if len(satisfying_routes) == len(type1.keys()):
             return satisfying_routes
@@ -169,23 +176,13 @@ class Graph():
 
     # type2: check selected cycle satisfy
     def type2_sum(self, cycles, type2_util, type2_edge_constraint):
-
-        # inner function
-        def find_max_cycle_capacity(cycle, capacity_left):
-            max_capacity = float("inf")
-            for u, v in zip(cycle, cycle[1:] + cycle[:1]):
-                if capacity_left[(u, v)] < max_capacity:
-                    max_capacity = capacity_left[(u, v)]
-            return max_capacity
-
         # init
         type2_util_left = copy.deepcopy(type2_util)
         capacity_left = copy.deepcopy(self.edges)
         satisfying_cycle_cap = []
 
         for cycle in cycles:
-
-            max_capacity = find_max_cycle_capacity(cycle, capacity_left)
+            max_capacity = utils.find_max_cycle_capacity(cycle, capacity_left)
             cycle_util = collections.defaultdict(float)
 
             for src_des_tuple, util in type2_util_left.items():
@@ -249,23 +246,13 @@ class Graph():
 
     # type2: selected cycle & max expected
     def type2_max(self, cycles, type2_util, type2_edge_constraint):
-
-        # inner function
-        def find_max_cycle_capacity(cycle, capacity_left):
-            max_capacity = float("inf")
-            for u, v in zip(cycle, cycle[1:] + cycle[:1]):
-                if capacity_left[(u, v)] < max_capacity:
-                    max_capacity = capacity_left[(u, v)]
-            return max_capacity
-
         # init
         type2_util_left = copy.deepcopy(type2_util)
         capacity_left = copy.deepcopy(self.edges)
         satisfying_cycle_cap = []
 
         for cycle in cycles:
-
-            max_capacity = find_max_cycle_capacity(cycle, capacity_left)
+            max_capacity = utils.find_max_cycle_capacity(cycle, capacity_left)
             cycle_util = collections.defaultdict(float)
 
             for src_des_tuple, util in type2_util_left.items():

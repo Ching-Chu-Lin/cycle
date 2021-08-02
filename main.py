@@ -5,7 +5,8 @@ import itertools
 import numpy as np
 import dijkstar
 
-from Graph import Graph
+from src.Graph import Graph
+from src import utils
 
 
 def parse_input_file(input_file_path):
@@ -43,102 +44,25 @@ def parse_input_file(input_file_path):
         return graph, type1, type2_util, type2_edge_constraint, num_transfer
 
 
-def merge_two_cycles(cycle1, cycle2):
-    if cycle1 == cycle2:
-        return
-    if len(set(cycle1) & set(cycle2)) == 0:
-        # no transfer
-        return
-
-    m = []
-    for transfer_vertex in list(set(cycle1) & set(cycle2)):
-
-        # cut cycle2 at intersection
-        for i in list(np.where(np.array(cycle2) == transfer_vertex)[0]):
-            # no need add intersection
-            cut_cycle2 = cycle2[i:] + cycle2[:i]
-
-            # cut cycle1 at intersection
-            for j in list(np.where(np.array(cycle1) == transfer_vertex)[0]):
-                new_cycle = copy.deepcopy(cycle1)
-                new_cycle[j:j] = cut_cycle2
-                # pop one intersection
-                # a = [0, 1, 2]
-                # b = [4, 5, 6]
-                # a[0:0] = b
-                # print(a) #[4, 5, 6, 0, 1, 2]
-
-                m.append(new_cycle)
-
-    # delete same cycle
-    for c in m:
-        for shift in range(1, len(c)):
-            same_cycle = collections.deque(c)
-            same_cycle.rotate(shift)
-            same_cycle = list(same_cycle)
-            if same_cycle in m:
-                m.remove(same_cycle)
-    return m
-
-
-def generate_transfer_cycle(cycles, num_transfer):
-    original_cycles = copy.deepcopy(cycles)
-
-    # init
-    to_be_merged = copy.deepcopy(cycles)
-
-    for _ in range(num_transfer):  # transfer : merge = 1 : 1
-        # merge cycles
-        merged_cycles = []
-        for cycle1 in to_be_merged:
-            for cycle2 in original_cycles:
-                m = merge_two_cycles(cycle1, cycle2)
-
-                if m != None:
-                    merged_cycles.extend(m)
-
-        # delete same cycle
-        for c in merged_cycles:
-            for shift in range(1, len(c)):
-                same_cycle = collections.deque(c)
-                same_cycle.rotate(shift)
-                same_cycle = list(same_cycle)
-                if same_cycle in merged_cycles:
-                    merged_cycles.remove(same_cycle)
-
-        cycles.extend(merged_cycles)
-        to_be_merged = merged_cycles
-
-    # delete same cycle
-    for c in cycles:
-        for shift in range(1, len(c)):
-            same_cycle = collections.deque(c)
-            same_cycle.rotate(shift)
-            same_cycle = list(same_cycle)
-            if same_cycle in cycles:
-                cycles.remove(same_cycle)
-
-    return cycles
-
-
 def main(args):
     graph, type1, type2_util, type2_edge_constraint, num_transfer = parse_input_file(
         args.input_file_path)
 
-    # type1: route input shortest path ( can satisfy )
-    type1_ans = graph.type1_shortest(type1)
+    # type1: route input
+    #type1_ans = graph.type1_shortest(type1)
+    type1_ans = graph.type1_least_conflict(type1, type2_util)
     if type1_ans == None:
         print("Cannot Satisfy all Type 1.")
         exit(1)
 
+    print("type1_ans:", type1_ans)
     cycles = graph.get_unique_cycles()
     print("cycles:", cycles)
-
     # add transfer cycles: merging cycles
-    print("add transfer cycles")
-    generate_transfer_cycle(cycles, num_transfer)
-    print("cycles:", cycles)
+    cycles = utils.generate_transfer_cycle(cycles, num_transfer)
+    print("add transfer cycles:", cycles, end="\n\n")
 
+    # type2: expected input
     type2_cycles = []
     for num_cycle in range(1, len(cycles)):
         if len(type2_cycles) != 0:  # find ans for type 2
@@ -154,8 +78,6 @@ def main(args):
 
             type2_ans = graph.type2_max(
                 one_combination, type2_util, type2_edge_constraint)
-            # type2_ans = graph.type2_sum(
-            #     one_combination, type2_util, type2_edge_constraint)
 
             if type2_ans == None:
                 continue
@@ -163,6 +85,7 @@ def main(args):
             type2_cycles.append(type2_ans)
 
     print("type1 paths:", type1_ans)
+    print("# type2 sol:", len(type2_cycles))
     print("type2 cycles:", type2_cycles)
     return
 
