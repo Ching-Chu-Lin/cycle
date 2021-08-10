@@ -7,6 +7,7 @@ import dijkstar
 
 from src.Graph import Graph
 from src import utils
+from src import Type1
 
 
 def parse_input_file(input_file_path):
@@ -48,45 +49,50 @@ def main(args):
     graph, type1, type2_util, type2_edge_constraint, num_transfer = parse_input_file(
         args.input_file_path)
 
-    # type1: route input
-    #type1_ans = graph.type1_shortest(type1)
-    type1_ans = graph.type1_least_conflict(type1, type2_util)
-    if type1_ans == None:
-        print("Cannot Satisfy all Type 1.")
-        exit(1)
+    try:
+        # type1: route input
+        type1_ans = Type1.type1_least_conflict(graph, type1, type2_util)
+        print("type1_ans:", type1_ans)
 
-    print("type1_ans:", type1_ans)
-    cycles = graph.get_unique_cycles()
-    print("cycles:", cycles)
-    # add transfer cycles: merging cycles
-    cycles = utils.generate_transfer_cycle(cycles, num_transfer)
-    print("add transfer cycles:", cycles, end="\n\n")
+        cycles = graph.get_unique_cycles()
+        print("cycles:", cycles)
+        # add transfer cycles: merging cycles
+        cycles = utils.generate_transfer_cycle(cycles, num_transfer)
+        print("add transfer cycles:", cycles, end="\n\n")
 
-    # type2: expected input
-    type2_cycles = []
-    for num_cycle in range(1, len(cycles)):
-        if len(type2_cycles) != 0:  # find ans for type 2
-            break
-        comb = itertools.combinations(cycles, num_cycle)
+        # type2: expected input
+        type2_cycles = graph.type2_greedy_cover_most(
+            cycles, type2_util, type2_edge_constraint)
+        '''
+        type2_cycles = []
+        for num_cycle in range(1, len(cycles)):
+            if len(type2_cycles) != 0:  # find ans for type 2
+                break
+            comb = itertools.combinations(cycles, num_cycle)
 
-        for one_combination in list(comb):
-            # no need to consider (1,) and (1,6)
-            # but check tuple disjoint? No (2, 3) and (3, 7)
-            # max len tuple contains others: max(map(len,tup)) ?
-            #lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
-            # print(lst[0].intersection(*lst))
+            for one_combination in list(comb):
+                # no need to consider (1,) and (1,6)
+                # but check tuple disjoint? No (2, 3) and (3, 7)
+                # max len tuple contains others: max(map(len,tup)) ?
+                #lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
+                # print(lst[0].intersection(*lst))
 
-            type2_ans = graph.type2_max(
-                one_combination, type2_util, type2_edge_constraint)
+                type2_ans = graph.type2_max(
+                    one_combination, type2_util, type2_edge_constraint)
 
-            if type2_ans == None:
-                continue
+                if type2_ans == None:
+                    continue
 
-            type2_cycles.append(type2_ans)
+                type2_cycles.append(type2_ans)
+        '''
+        print("type1 paths:", type1_ans)
+        print("type2 cycles:", type2_cycles)
 
-    print("type1 paths:", type1_ans)
-    print("# type2 sol:", len(type2_cycles))
-    print("type2 cycles:", type2_cycles)
+    except Exception as inst:
+        # TODO: define exception class for no solution
+        print(inst)
+        raise
+
     return
 
 
