@@ -61,7 +61,7 @@ def main(args):
         print("add transfer cycles:", cycles, end="\n\n")
 
         # type2: expected input
-        type2_cycles = graph.type2_greedy_cover_most(
+        type2_cycles, type2_routes = graph.type2_greedy_cover_most(
             cycles, type2_util, type2_edge_constraint)
         '''
         type2_cycles = []
@@ -86,6 +86,7 @@ def main(args):
                 type2_cycles.append(type2_ans)
         '''
         print("type1 paths:", type1_ans)
+        print("type2 routes:", type2_routes)
         print("type2 cycles:", type2_cycles)
 
     except Exception as inst:

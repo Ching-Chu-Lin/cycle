@@ -193,6 +193,8 @@ class Graph():
 
     # type2: greedily include a cycle that cover the most # of vertices left in type2_util
     def type2_greedy_cover_most(self, cycles, type2_util, type2_edge_constraint):
+        satisfying_routes = []
+
         type2_util_left = copy.deepcopy(type2_util)
         capacity_left = copy.deepcopy(self.edges)
         satisfying_cycle_cap = []
@@ -240,11 +242,16 @@ class Graph():
                             if cycle_util[(u, v)] < util:
                                 cycle_util[(u, v)] = util
                         type2_util_left[(src_vertex, des_vertex)] = 0
+                        satisfying_routes.append(
+                            (choosed_cycle[src_index:des_index+1], util))
                     else:
                         for u, v in zip(choosed_cycle[src_index:]+choosed_cycle[:des_index], choosed_cycle[src_index+1:]+choosed_cycle[:des_index+1]):
                             if cycle_util[(u, v)] < util:
                                 cycle_util[(u, v)] = util
                         type2_util_left[(src_vertex, des_vertex)] = 0
+                        satisfying_routes.append((
+                            choosed_cycle[src_index:] +
+                            choosed_cycle[:des_index+1], util))
 
             if len(cycle_util.values()) == 0:
                 # this cycle cannot help
@@ -262,4 +269,4 @@ class Graph():
 
         if any(type2_util_left.values()):
             return None
-        return satisfying_cycle_cap
+        return satisfying_cycle_cap, satisfying_routes
