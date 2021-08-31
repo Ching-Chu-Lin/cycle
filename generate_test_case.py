@@ -25,7 +25,7 @@ def generate_graph(output_file):
         outneighbor_pool.remove(vertex)  # no edge to itself
         # sample: no repetition
         neighbors = sorted(random.sample(outneighbor_pool, num_edges))
-        util = [round(random.random(), 5)for _ in range(len(neighbors))]
+        util = [round(random.random(), 1)for _ in range(len(neighbors))]
 
         for v, u in zip(neighbors, util):
             print("{} {}".format(v, u), file=output_file, end=" ")
@@ -41,7 +41,7 @@ def generate_type1(num_vertex, output_file):
     pair = list(itertools.permutations(range(num_vertex), 2))
 
     src_des_tuples = sorted(random.sample(pair, k=M))
-    util = [round(random.random(), 5)for _ in range(M)]
+    util = [round(random.random(), 1)for _ in range(M)]
     for src_des, u in zip(src_des_tuples, util):
         src, des = src_des
         print("{} {} {}".format(src, des, u), file=output_file)
@@ -57,7 +57,7 @@ def generate_type2(num_vertex, output_file):
     edge_constraint_pool = list(range(1, num_vertex+1))
 
     src_des_tuples = sorted(random.sample(pair, k=N))
-    util = [round(random.random(), 5)for _ in range(N)]
+    util = [round(random.random(), 1)for _ in range(N)]
     edge_constraint = random.choices(edge_constraint_pool, k=N)
 
     for src_des, u, c in zip(src_des_tuples, util, edge_constraint):
