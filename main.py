@@ -1,13 +1,9 @@
 import argparse
-import collections
-import copy
-import itertools
-import numpy as np
-import dijkstar
 
 from src.Graph import Graph
 from src import utils
-from src import Type1
+from src.Type1 import Type1
+from src.Type2 import Type2
 
 
 def parse_input_file(input_file_path):
@@ -51,40 +47,21 @@ def main(args):
 
     try:
         # type1: route input
-        type1_ans = Type1.type1_least_conflict(graph, type1, type2_util)
-        print("type1_ans:", type1_ans)
+        type1_ans = Type1(graph, type1).solution(
+            "least_conflict_value", type2_util)
 
         cycles = graph.get_unique_cycles()
-        print("cycles:", cycles)
-        # add transfer cycles: merging cycles
         cycles = utils.generate_transfer_cycle(cycles, num_transfer)
-        print("add transfer cycles:", cycles, end="\n\n")
+
+        # TODO: cycle tuple from original -> merged ?
+        # no need to consider (1,) and (1,6)
+        # lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
+        # print(lst[0].intersection(*lst))
 
         # type2: expected input
-        type2_cycles, type2_routes = graph.type2_greedy_cover_most(
-            cycles, type2_util, type2_edge_constraint)
-        '''
-        type2_cycles = []
-        for num_cycle in range(1, len(cycles)):
-            if len(type2_cycles) != 0:  # find ans for type 2
-                break
-            comb = itertools.combinations(cycles, num_cycle)
+        type2_cycles, type2_routes = Type2(
+            graph, type2_util, type2_edge_constraint).greedy(cycles)
 
-            for one_combination in list(comb):
-                # no need to consider (1,) and (1,6)
-                # but check tuple disjoint? No (2, 3) and (3, 7)
-                # max len tuple contains others: max(map(len,tup)) ?
-                #lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
-                # print(lst[0].intersection(*lst))
-
-                type2_ans = graph.type2_max(
-                    one_combination, type2_util, type2_edge_constraint)
-
-                if type2_ans == None:
-                    continue
-
-                type2_cycles.append(type2_ans)
-        '''
         print("type1 paths:", type1_ans)
         print("type2 routes:", type2_routes)
         print("type2 cycles:", type2_cycles)
