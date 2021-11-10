@@ -1,5 +1,5 @@
 import collections
-import copy  # brute-force
+import copy
 import itertools
 import numpy as np
 
@@ -13,10 +13,24 @@ class Type2():
         self.type2_util = type2_util
         self.type2_edge_constraint = type2_edge_constraint
 
+    def solution(self, solve_method, num_transfer, *args):
+        cycles = self.graph.get_unique_cycles()
+        cycles = utils.generate_transfer_cycle(cycles, num_transfer)
+
+        # TODO: cycle tuple from original -> merged ?
+        # no need to consider (1,) and (1,6)
+        # lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
+        # print(lst[0].intersection(*lst))
+
+        f = getattr(self, solve_method)
+        type2_cycles, type2_routes = f(cycles, *args)
+        # TODO: type2 none throw exception: raise Exception("Cannot Satisfy all Type 1")
+        return type2_cycles, type2_routes
+
     def sum_streams_on_cycle(self, graph, type2_util, c):
         routes = []
         cycle_util = collections.defaultdict(float)
-        max_capacity = utils.find_max_cycle_capacity(c, graph.edges)
+        max_capacity = utils.find_max_cycle_capacity(c, graph.capacity)
 
         for (Sx, Dx), Ux in type2_util.items():
             if Sx not in c or Dx not in c:
@@ -60,15 +74,15 @@ class Type2():
 
         # assign util = cycle_util.max() to this cycle
         for u, v in zip(c, c[1:] + c[:1]):
-            graph.edges[(u, v)] = round(
-                graph.edges[(u, v)]-max(cycle_util.values()), 1)
+            graph.capacity[(u, v)] = round(
+                graph.capacity[(u, v)]-max(cycle_util.values()), 1)
 
         return (c, max(cycle_util.values())), routes
 
     def max_streams_on_cycle(self, graph, type2_util, c):
         routes = []
         cycle_util = collections.defaultdict(float)
-        max_capacity = utils.find_max_cycle_capacity(c, graph.edges)
+        max_capacity = utils.find_max_cycle_capacity(c, graph.capacity)
 
         for (Sx, Dx), Ux in type2_util.items():
             if Sx not in c or Dx not in c:
@@ -104,8 +118,8 @@ class Type2():
 
         # assign util = cycle_util.max() to this cycle
         for u, v in zip(c, c[1:] + c[: 1]):
-            graph.edges[(u, v)] = round(
-                graph.edges[(u, v)]-max(cycle_util.values()), 1)
+            graph.capacity[(u, v)] = round(
+                graph.capacity[(u, v)]-max(cycle_util.values()), 1)
         return (c, max(cycle_util.values())), routes
 
     def brute_force(self, cycles):
@@ -119,7 +133,8 @@ class Type2():
                 type2_util = copy.deepcopy(self.type2_util)
 
                 for c in one_combination:
-                    Pi, routes = self.sum_streams_on_cycle(
+                    # TODO: sum stream to upper layer
+                    Pi, routes = self.max_streams_on_cycle(
                         graph, type2_util, c)
 
                     if len(routes) != 0:
@@ -134,25 +149,25 @@ class Type2():
     # ========================= greedy =====================================
     # ======================================================================
 
-    def choose_cycle_cover_most(self, cycles, type2_util):
+    def choose_cycle_cover_most(self, pool, type2_util):
         vertice_left = set().union(
             *[set((Sx, Dx)) for (Sx, Dx), Ux in type2_util.items() if Ux != 0])
-        return cycles[np.argmin([len(vertice_left - set(c))
-                                 for c in cycles])]
+        return pool[np.argmin([len(vertice_left - set(c))
+                               for c in pool])]
 
-    def greedy(self, cycles):
-        cycles = copy.deepcopy(cycles)
+    def greedy(self, pool):
+        pool = copy.deepcopy(pool)
 
         type2_cycles = []
         type2_routes = []
         graph = copy.deepcopy(self.graph)
         type2_util = copy.deepcopy(self.type2_util)
 
-        while len(cycles) != 0 and any(type2_util.values()):
+        while len(pool) != 0 and any(type2_util.values()):
             # greed selection method
-            c = self.choose_cycle_cover_most(cycles, type2_util)
+            c = self.choose_cycle_cover_most(pool, type2_util)
 
-            Pi, routes = self.max_streams_on_cycle(graph, type2_util, c)
+            Pi, routes = self.sum_streams_on_cycle(graph, type2_util, c)
 
             if len(routes) != 0:
                 type2_cycles.append(Pi)
@@ -160,7 +175,7 @@ class Type2():
 
             # if c holds max of which can contain, it cannot holds more
             # if c cannot hold any remainings, neither can it hold any in the future
-            cycles.remove(c)
+            pool.remove(c)
 
         if any(type2_util.values()):
             return None, None

@@ -7,17 +7,17 @@ from . import utils
 class Graph():
     def __init__(self, num_vertex):
         self.vertices = list(range(num_vertex))  # [0, 1, ... ]
-        self.adjacent = collections.defaultdict(list)  # default dict of []
-        self.edges = collections.defaultdict(float)  # edges[(u, v)] = 0
+        self.edges = collections.defaultdict(list)  # default dict of []
+        self.capacity = collections.defaultdict(float)  # edges[(u, v)] = 0
 
-    def add_edge(self, u, v, capacity):
-        self.adjacent[u].append(v)
-        self.edges[(u, v)] = capacity
+    def add_edge(self, u, v, c):
+        self.edges[u].append(v)
+        self.capacity[(u, v)] = c
 
     def printGraph(self):
         for u in self.vertices:
-            for v in self.adjacent[u]:
-                print(f"({u} —> {v}, {self.edges[(u,v)]})", end=' ')
+            for v in self.edges[u]:
+                print(f"({u} —> {v}, {self.capacity[(u,v)]})", end=' ')
             print()
 
     def dfs(self, src, des):
@@ -25,7 +25,7 @@ class Graph():
         while current:
             path = current.pop()
 
-            for neighbor in self.adjacent[path[-1]]:
+            for neighbor in self.edges[path[-1]]:
                 if neighbor == des:
                     yield path+[neighbor]
                     continue
@@ -37,15 +37,15 @@ class Graph():
 
     def take_path(self, path, U):
         for u, v in zip(path, path[1:]):
-            self.edges[(u, v)] = round(self.edges[(u, v)] - U, 1)
-            if self.edges[(u, v)] == 0:
-                self.adjacent[u].remove(v)
-                self.edges.pop((u, v), None)
+            self.capacity[(u, v)] = round(self.capacity[(u, v)] - U, 1)
+            if self.capacity[(u, v)] == 0:
+                self.edges[u].remove(v)
+                self.capacity.pop((u, v), None)
         return
 
     def check_path_enough_capacity(self, path, util):
         for u, v in zip(path, path[1:]):
-            if self.edges[(u, v)] < util:
+            if self.capacity[(u, v)] < util:
                 return False
         return True
 

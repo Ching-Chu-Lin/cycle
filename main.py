@@ -47,20 +47,17 @@ def main(args):
 
     try:
         # type1: route input
-        type1_ans = Type1(graph, type1).solution(
-            "least_conflict_value", type2_util)
-
-        cycles = graph.get_unique_cycles()
-        cycles = utils.generate_transfer_cycle(cycles, num_transfer)
-
-        # TODO: cycle tuple from original -> merged ?
-        # no need to consider (1,) and (1,6)
-        # lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
-        # print(lst[0].intersection(*lst))
+        if args.Type1_method == "least_conflict_value":
+            type1_ans = Type1(graph, type1).solution(
+                "least_conflict_value", type2_util)
+        else:
+            type1_ans = Type1(graph, type1).solution("shortest_path")
 
         # type2: expected input
         type2_cycles, type2_routes = Type2(
-            graph, type2_util, type2_edge_constraint).greedy(cycles)
+            graph, type2_util, type2_edge_constraint).solution("greedy", num_transfer)
+        # type2_cycles, type2_routes = Type2(
+        #     graph, type2_util, type2_edge_constraint).solution("brute_force", num_transfer)
 
         print("type1 paths:", type1_ans)
         print("type2 routes:", type2_routes)
@@ -77,6 +74,7 @@ def main(args):
 def parse_args():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("input_file_path")
+    parser.add_argument("Type1_method")
     return parser.parse_args()
 
 

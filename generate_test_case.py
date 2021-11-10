@@ -14,6 +14,7 @@ def parse_args():
 def generate_graph(output_file):
     # generate vertices
     num_vertex = random.randrange(3, 10)
+    num_vertex = 5
     print(num_vertex, file=output_file)
 
     # generate edge of each vertex
@@ -25,7 +26,7 @@ def generate_graph(output_file):
         outneighbor_pool.remove(vertex)  # no edge to itself
         # sample: no repetition
         neighbors = sorted(random.sample(outneighbor_pool, num_edges))
-        util = [round(random.random(), 1)for _ in range(len(neighbors))]
+        util = [1 for _ in range(len(neighbors))]
 
         for v, u in zip(neighbors, util):
             print("{} {}".format(v, u), file=output_file, end=" ")
@@ -36,6 +37,7 @@ def generate_graph(output_file):
 
 def generate_type1(num_vertex, output_file):
     M = random.randrange(1, math.perm(num_vertex, 2))
+    M = 2
     print(M, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
@@ -51,6 +53,7 @@ def generate_type1(num_vertex, output_file):
 
 def generate_type2(num_vertex, output_file):
     N = random.randrange(1, math.perm(num_vertex, 2))
+    N = 7
     print(N, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
