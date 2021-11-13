@@ -45,6 +45,7 @@ def main(args):
     graph, type1, type2_util, type2_edge_constraint, num_transfer = parse_input_file(
         args.input_file_path)
 
+    # Type1
     try:
         # type1: route input
         if args.Type1_method == "least_conflict_value":
@@ -53,22 +54,23 @@ def main(args):
         else:
             type1_ans = Type1(graph, type1).solution("shortest_path")
 
-        # type2: expected input
-        type2_cycles, type2_routes = Type2(
-            graph, type2_util, type2_edge_constraint).solution("greedy", num_transfer)
-        # type2_cycles, type2_routes = Type2(
-        #     graph, type2_util, type2_edge_constraint).solution("brute_force", num_transfer)
-
-        print("type1 paths:", type1_ans)
-        print("type2 routes:", type2_routes)
-        print("type2 cycles:", type2_cycles)
-
     except Exception as inst:
-        # TODO: define exception class for no solution
-        print(inst)
-        raise
+        exit(1)
 
-    return
+    # Type2: expected input
+    type2_cycles, type2_routes = Type2(
+        graph, type2_util, type2_edge_constraint).solution("greedy", num_transfer)
+
+    if type2_cycles == None:
+        exit(2)
+
+    # output answer
+    print(args.Type1_method, "(", len(type2_cycles), ")")
+    print("type1 paths:", type1_ans)
+    print("type2 routes:", type2_routes)
+    print("type2 cycles:", type2_cycles)
+
+    return 0
 
 
 def parse_args():

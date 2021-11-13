@@ -7,15 +7,20 @@ class Type1():
         self.type1 = type1
 
     def solution(self, select_method, *args):
-        f = getattr(self, select_method)
+        try:
+            f = getattr(self, select_method)
 
-        type1_ans = []
-        for lambdak in self.type1.items():
-            # change decide path methods
-            (Sk, Dk), Uk = lambdak
-            path = f(lambdak, *args)
-            self.graph.take_path(path, Uk)
-            type1_ans.append((path, Uk))
+            type1_ans = []
+            for lambdak in self.type1.items():
+                # change decide path methods
+                (Sk, Dk), Uk = lambdak
+                path = f(lambdak, *args)
+                self.graph.take_path(path, Uk)
+                type1_ans.append((path, Uk))
+
+        except Exception:
+            raise
+
         return type1_ans
 
     # select path method: shortest path

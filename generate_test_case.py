@@ -43,7 +43,7 @@ def generate_type1(num_vertex, output_file):
     pair = list(itertools.permutations(range(num_vertex), 2))
 
     src_des_tuples = sorted(random.sample(pair, k=M))
-    util = [round(random.random(), 1)for _ in range(M)]
+    util = [round(random.uniform(0.1, 0.5), 1)for _ in range(M)]
     for src_des, u in zip(src_des_tuples, util):
         src, des = src_des
         print("{} {} {}".format(src, des, u), file=output_file)
@@ -53,14 +53,14 @@ def generate_type1(num_vertex, output_file):
 
 def generate_type2(num_vertex, output_file):
     N = random.randrange(1, math.perm(num_vertex, 2))
-    N = 7
+    N = 5
     print(N, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
     edge_constraint_pool = list(range(1, num_vertex+1))
 
     src_des_tuples = sorted(random.sample(pair, k=N))
-    util = [round(random.random(), 1)for _ in range(N)]
+    util = [round(random.uniform(0.1, 0.5), 1)for _ in range(N)]
     edge_constraint = random.choices(edge_constraint_pool, k=N)
 
     for src_des, u, c in zip(src_des_tuples, util, edge_constraint):
@@ -72,7 +72,16 @@ def generate_type2(num_vertex, output_file):
 
 def main(args):
     with open(args.output_file_path, "w") as output_file:
-        num_vertex = generate_graph(output_file)
+        # num_vertex = generate_graph(output_file)
+
+        # fix graph
+        num_vertex = 5
+        print("5", file=output_file)
+        print("0,1 1 2 1 4 1", file=output_file)
+        print("1,0 1 3 1", file=output_file)
+        print("2,0 1 1 1", file=output_file)
+        print("3,1 1 2 1", file=output_file)
+        print("4,1 1 3 1", file=output_file)
 
         generate_type1(num_vertex, output_file)
         generate_type2(num_vertex, output_file)
