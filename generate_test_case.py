@@ -14,7 +14,7 @@ def parse_args():
 def generate_graph(output_file):
     # generate vertices
     num_vertex = random.randrange(3, 10)
-    num_vertex = 5
+    num_vertex = 7
     print(num_vertex, file=output_file)
 
     # generate edge of each vertex
@@ -37,7 +37,7 @@ def generate_graph(output_file):
 
 def generate_type1(num_vertex, output_file):
     M = random.randrange(1, math.perm(num_vertex, 2))
-    M = 2
+    M = 3
     print(M, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
@@ -53,7 +53,7 @@ def generate_type1(num_vertex, output_file):
 
 def generate_type2(num_vertex, output_file):
     N = random.randrange(1, math.perm(num_vertex, 2))
-    N = 5
+    N = 6
     print(N, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
@@ -72,16 +72,7 @@ def generate_type2(num_vertex, output_file):
 
 def main(args):
     with open(args.output_file_path, "w") as output_file:
-        # num_vertex = generate_graph(output_file)
-
-        # fix graph
-        num_vertex = 5
-        print("5", file=output_file)
-        print("0,1 1 2 1 4 1", file=output_file)
-        print("1,0 1 3 1", file=output_file)
-        print("2,0 1 1 1", file=output_file)
-        print("3,1 1 2 1", file=output_file)
-        print("4,1 1 3 1", file=output_file)
+        num_vertex = generate_graph(output_file)
 
         generate_type1(num_vertex, output_file)
         generate_type2(num_vertex, output_file)

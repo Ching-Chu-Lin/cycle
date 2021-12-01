@@ -4,170 +4,63 @@ import itertools
 import numpy as np
 
 
-from . import utils
-
-
 class Type2():
-    def __init__(self, graph, type2_util, type2_edge_constraint):
+    def __init__(self, graph, type2):
         self.graph = graph
-        self.type2_util = type2_util
-        self.type2_edge_constraint = type2_edge_constraint
+        self.type2 = type2
+        self.solve_method = None
+        self.max_sum_method = None
 
-    def solution(self, solve_method, num_transfer, *args):
-        cycles = self.graph.get_unique_cycles()
-        cycles = utils.generate_transfer_cycle(cycles, num_transfer)
+    def solution(self, solve_method, max_sum_method, num_transfer, *args):
+        pool = self.graph.get_unique_cycles()
+        # cycles = utils.generate_transfer_cycle(cycles, num_transfer)
 
-        # TODO: cycle tuple from original -> merged ?
-        # no need to consider (1,) and (1,6)
-        # lst = [{1, 2, 3}, {1, 4}, {1, 2, 3}]
-        # print(lst[0].intersection(*lst))
+        try:
+            self.solve_method = getattr(self, solve_method)
+            self.max_sum_method = getattr(self, max_sum_method)
 
-        f = getattr(self, solve_method)
-        type2_cycles, type2_routes = f(cycles, *args)
-        # TODO: type2 none throw exception: raise Exception("Cannot Satisfy all Type 1")
-        return type2_cycles, type2_routes
+            type2_cycles, type2_routes = self.solve_method(pool, *args)
+            return type2_cycles, type2_routes
+        except Exception as inst:
+            raise inst
 
-    def sum_streams_on_cycle(self, graph, type2_util, c):
-        routes = []
-        cycle_util = collections.defaultdict(float)
-        max_capacity = utils.find_max_cycle_capacity(c, graph.capacity)
-
-        for (Sx, Dx), Ux in type2_util.items():
-            if Sx not in c or Dx not in c:
-                continue
-            if Ux == 0:
-                continue
-
-            Sx_indices = np.where(np.array(c) == Sx)[0]
-            Dx_indices = np.where(np.array(c) == Dx)[0]
-            # d : edge difference
-            d = Dx_indices - Sx_indices[:, np.newaxis]
-            d[d < 0] += len(c)
-            rows, cols = np.unravel_index(np.argsort(d, axis=None), d.shape)
-
-            for row, col in zip(rows, cols):
-                if d[row][col] > self.type2_edge_constraint[(Sx, Dx)]:
-                    break
-
-                Sx_idx = Sx_indices[row]
-                Dx_idx = Dx_indices[col]
-                path = c[Sx_idx:Dx_idx +
-                         1] if Sx_idx < Dx_idx else c[Sx_idx:]+c[:Dx_idx+1]
-
-                # check enough
-                enough = True
-                for u, v in zip(path, path[1:]):
-                    if max_capacity < cycle_util[(u, v)] + Ux:
-                        enough = False
-                        break
-
-                # take path on cycle
-                if enough == True:
-                    for u, v in zip(path, path[1:]):
-                        cycle_util[(u, v)] += Ux
-                    type2_util[(Sx, Dx)] = 0
-                    routes.append((path, Ux))
-                    break
-
-        if len(cycle_util.values()) == 0:
-            return (c, 0), routes
-
-        # assign util = cycle_util.max() to this cycle
-        for u, v in zip(c, c[1:] + c[:1]):
-            graph.capacity[(u, v)] = round(
-                graph.capacity[(u, v)]-max(cycle_util.values()), 1)
-
-        return (c, max(cycle_util.values())), routes
-
-    def max_streams_on_cycle(self, graph, type2_util, c):
-        routes = []
-        cycle_util = collections.defaultdict(float)
-        max_capacity = utils.find_max_cycle_capacity(c, graph.capacity)
-
-        for (Sx, Dx), Ux in type2_util.items():
-            if Sx not in c or Dx not in c:
-                continue
-            if Ux == 0 or max_capacity < Ux:
-                continue
-
-            # check edge constraint d : edge difference
-            Sx_indices = np.where(np.array(c) == Sx)[0]
-            Dx_indices = np.where(np.array(c) == Dx)[0]
-
-            d = Dx_indices - Sx_indices[:, np.newaxis]
-            d[d < 0] += len(c)
-            row, col = np.unravel_index(d.argmin(), d.shape)
-            if d[row][col] > self.type2_edge_constraint[(Sx, Dx)]:
-                # smallest edge difference > edge constrain
-                continue
-
-            # solution path
-            Sx_idx = Sx_indices[row]
-            Dx_idx = Dx_indices[col]
-            path = c[Sx_idx:Dx_idx +
-                     1] if Sx_idx < Dx_idx else c[Sx_idx:]+c[: Dx_idx+1]
-
-            # take path on cycle
-            for u, v in zip(path, path[1:]):
-                cycle_util[(u, v)] = max(cycle_util[(u, v)], Ux)
-            type2_util[(Sx, Dx)] = 0
-            routes.append((path, Ux))
-
-        if len(cycle_util.values()) == 0:
-            return (c, 0), routes
-
-        # assign util = cycle_util.max() to this cycle
-        for u, v in zip(c, c[1:] + c[: 1]):
-            graph.capacity[(u, v)] = round(
-                graph.capacity[(u, v)]-max(cycle_util.values()), 1)
-        return (c, max(cycle_util.values())), routes
-
-    def brute_force(self, cycles):
-        for num_cycle in range(1, len(cycles)):
-            comb = itertools.combinations(cycles, num_cycle)
+    def brute_force(self, pool):
+        for num_cycle in range(1, len(pool)):
+            comb = itertools.combinations(pool, num_cycle)
             for one_combination in list(comb):
                 # check cycles of one combination
+                graph = copy.deepcopy(self.graph)
+                type2 = copy.deepcopy(self.type2)
                 type2_cycles = []
                 type2_routes = []
-                graph = copy.deepcopy(self.graph)
-                type2_util = copy.deepcopy(self.type2_util)
 
                 for c in one_combination:
-                    # TODO: sum stream to upper layer
-                    Pi, routes = self.max_streams_on_cycle(
-                        graph, type2_util, c)
-
+                    Pi, routes = self.stuff_Type2_on_cycle(graph, type2, c)
                     if len(routes) != 0:
                         type2_cycles.append(Pi)
                         type2_routes.extend(routes)
 
-                if not any(type2_util.values()):
+                if not any(type2.values()):
                     return type2_cycles, type2_routes
-        return None, None
+        raise Exception("Cannot Satisfy all Type 2")
 
-    # ======================================================================
-    # ========================= greedy =====================================
-    # ======================================================================
-
-    def choose_cycle_cover_most(self, pool, type2_util):
-        vertice_left = set().union(
-            *[set((Sx, Dx)) for (Sx, Dx), Ux in type2_util.items() if Ux != 0])
+    def choose_cycle_cover_most(self, pool, type2):
+        vertice_left = set().union(*[set((Sx, Dx))
+                                     for (Sx, Dx) in type2.keys()])
         return pool[np.argmin([len(vertice_left - set(c))
                                for c in pool])]
 
     def greedy(self, pool):
         pool = copy.deepcopy(pool)
-
+        graph = copy.deepcopy(self.graph)
+        type2 = copy.deepcopy(self.type2)
         type2_cycles = []
         type2_routes = []
-        graph = copy.deepcopy(self.graph)
-        type2_util = copy.deepcopy(self.type2_util)
 
-        while len(pool) != 0 and any(type2_util.values()):
+        while len(pool) != 0 and any(type2.values()):
             # greed selection method
-            c = self.choose_cycle_cover_most(pool, type2_util)
-
-            Pi, routes = self.sum_streams_on_cycle(graph, type2_util, c)
+            c = self.choose_cycle_cover_most(pool, type2)
+            Pi, routes = self.stuff_Type2_on_cycle(graph, type2, c)
 
             if len(routes) != 0:
                 type2_cycles.append(Pi)
@@ -177,6 +70,93 @@ class Type2():
             # if c cannot hold any remainings, neither can it hold any in the future
             pool.remove(c)
 
-        if any(type2_util.values()):
-            return None, None
+        if any(type2.values()):
+            raise Exception("Cannot Satisfy all Type 2")
         return type2_cycles, type2_routes
+
+    # ================================================================
+    # =============== Stuff Type2 streams on cycles ==================
+    # ================================================================
+
+    def stuff_Type2_on_cycle(self, graph, type2, c):
+        cycle_util = collections.defaultdict(float)  # edge along the cycle
+        max_capacity = graph.find_max_cycle_capacity(c)
+        routes = []  # output for each pair Type 2
+
+        for sigmax in list(type2.items()):
+            (Sx, Dx), (Ux, dx) = sigmax
+            if Sx not in c or Dx not in c or Ux == 0:
+                continue
+
+            # find a path for this stream and take path
+            path = self.max_sum_method(c, max_capacity, cycle_util, sigmax)
+            if path != None:
+                type2.pop((Sx, Dx))
+                routes.append((path, Ux))
+
+        # no Type2 assigned
+        if len(cycle_util.values()) == 0:
+            return (c, 0), routes
+        # assign util = max(cycle_util.values()) to this cycle
+        graph.take_path(c + [c[0]], max(cycle_util.values()))
+        return (c, max(cycle_util.values())), routes
+
+    def sum_streams_on_cycle(self, c, max_capacity, cycle_util, sigmax):
+        # find a path for this stream
+        (Sx, Dx), (Ux, dx) = sigmax
+        Sx_indices = np.where(np.array(c) == Sx)[0]
+        Dx_indices = np.where(np.array(c) == Dx)[0]
+        d = Dx_indices - Sx_indices[:, np.newaxis]  # d : edge difference
+        d[d < 0] += len(c)
+        rows, cols = np.unravel_index(np.argsort(d, axis=None), d.shape)
+        for row, col in zip(rows, cols):
+            if d[row][col] > dx:
+                return None
+
+            Sx_idx = Sx_indices[row]
+            Dx_idx = Dx_indices[col]
+            path = c[Sx_idx:Dx_idx +
+                     1] if Sx_idx < Dx_idx else c[Sx_idx:]+c[:Dx_idx+1]
+
+            # check enough
+            enough = True
+            for u, v in zip(path, path[1:]):
+                if max_capacity < cycle_util[(u, v)] + Ux:
+                    enough = False
+                    break
+
+            if enough == True:
+                # take path on cycle
+                if path != None:
+                    for u, v in zip(path, path[1:]):
+                        cycle_util[(u, v)] += Ux
+                return path
+        return None
+
+    def max_streams_on_cycle(self, c, max_capacity, cycle_util, sigmax):
+        # find a path for this stream
+        (Sx, Dx), (Ux, dx) = sigmax
+        if max_capacity < Ux:
+            return None
+
+        Sx_indices = np.where(np.array(c) == Sx)[0]
+        Dx_indices = np.where(np.array(c) == Dx)[0]
+        d = Dx_indices - Sx_indices[:, np.newaxis]
+        d[d < 0] += len(c)
+        row, col = np.unravel_index(d.argmin(), d.shape)
+
+        # smallest edge difference > edge constrain
+        if d[row][col] > dx:
+            return None
+
+        # solution path
+        Sx_idx = Sx_indices[row]
+        Dx_idx = Dx_indices[col]
+        path = c[Sx_idx:Dx_idx +
+                 1] if Sx_idx < Dx_idx else c[Sx_idx:]+c[: Dx_idx+1]
+
+        # take path on cycle
+        if path != None:
+            for u, v in zip(path, path[1:]):
+                cycle_util[(u, v)] = max(cycle_util[(u, v)], Ux)
+        return path

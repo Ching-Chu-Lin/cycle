@@ -13,12 +13,14 @@ class Graph():
     def add_edge(self, u, v, c):
         self.edges[u].append(v)
         self.capacity[(u, v)] = c
+        return
 
     def printGraph(self):
         for u in self.vertices:
             for v in self.edges[u]:
                 print(f"({u} —> {v}, {self.capacity[(u,v)]})", end=' ')
             print()
+        return
 
     def dfs(self, src, des):
         current = [[src]]
@@ -35,6 +37,12 @@ class Graph():
                     continue
                 current.append(path+[neighbor])
 
+    def check_path_enough_capacity(self, path, util):
+        for u, v in zip(path, path[1:]):
+            if self.capacity[(u, v)] < util:
+                return False
+        return True
+
     def take_path(self, path, U):
         for u, v in zip(path, path[1:]):
             self.capacity[(u, v)] = round(self.capacity[(u, v)] - U, 1)
@@ -42,12 +50,6 @@ class Graph():
                 self.edges[u].remove(v)
                 self.capacity.pop((u, v), None)
         return
-
-    def check_path_enough_capacity(self, path, util):
-        for u, v in zip(path, path[1:]):
-            if self.capacity[(u, v)] < util:
-                return False
-        return True
 
     def get_unique_cycles(self):
         # find small cycles
@@ -58,3 +60,10 @@ class Graph():
             c.pop()
         cycles = utils.delete_same_cycle(cycles)
         return cycles
+
+    def find_max_cycle_capacity(self, cycle):
+        max_capacity = float("inf")
+        for u, v in zip(cycle, cycle[1:] + cycle[:1]):
+            if self.capacity[(u, v)] < max_capacity:
+                max_capacity = self.capacity[(u, v)]
+        return max_capacity

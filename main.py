@@ -26,46 +26,46 @@ def parse_input_file(input_file_path):
             src, des, util = input_file.readline().strip().split(" ")
             type1[int(src), int(des)] = float(util)
 
-        # parse expected utilizations: type2 + edge upper bound constraint
+        # parse expected utilizations: type2 (util, edge constraint)
         N = int(input_file.readline().strip())
-        type2_util = {}
-        type2_edge_constraint = {}
+        type2 = {}
         for _ in range(N):
             src, des, util, edge_constraint = input_file.readline().strip().split(" ")
-            type2_util[int(src), int(des)] = float(util)
-            type2_edge_constraint[int(src), int(des)] = int(edge_constraint)
+            type2[int(src), int(des)] = (float(util), int(edge_constraint))
 
         # parse constraint 2: max number of transfer
         num_transfer = int(input_file.readline().strip())
 
-        return graph, type1, type2_util, type2_edge_constraint, num_transfer
+        return graph, type1, type2, num_transfer
 
 
 def main(args):
-    graph, type1, type2_util, type2_edge_constraint, num_transfer = parse_input_file(
+    graph, type1, type2, num_transfer = parse_input_file(
         args.input_file_path)
 
     # Type1
     try:
-        # type1: route input
         if args.Type1_method == "least_conflict_value":
             type1_ans = Type1(graph, type1).solution(
-                "least_conflict_value", type2_util)
+                "least_conflict_value", type2)
         else:
             type1_ans = Type1(graph, type1).solution("shortest_path")
 
-    except Exception as inst:
+    except Exception as i:
+        print(i)
         exit(1)
 
     # Type2: expected input
-    type2_cycles, type2_routes = Type2(
-        graph, type2_util, type2_edge_constraint).solution("greedy", num_transfer)
+    try:
+        type2_cycles, type2_routes = Type2(
+            graph, type2).solution("greedy", "max_streams_on_cycle", num_transfer)
 
-    if type2_cycles == None:
+    except Exception as i:
+        print(i)
         exit(2)
 
     # output answer
-    print(args.Type1_method, "(", len(type2_cycles), ")")
+    print(args.Type1_method)
     print("type1 paths:", type1_ans)
     print("type2 routes:", type2_routes)
     print("type2 cycles:", type2_cycles)

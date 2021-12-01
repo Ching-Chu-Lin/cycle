@@ -4,20 +4,19 @@ import numpy as np
 
 
 def delete_same_cycle(cycles):
-    # remove dulplicates
-    res = []
+    # convert to string
+    cycles = ["".join(map(str, c)) for c in cycles]
+
+    # remove dulplicates & rotate
+    cycles = sorted((set(cycles)))  # list
+
     for c in cycles:
-        if c not in res:
-            res.append(c)
-    # remove other form of same cycle
-    for c in res:
         for shift in range(1, len(c)):
-            same_cycle = collections.deque(c)
-            same_cycle.rotate(shift)
-            same_cycle = list(same_cycle)
-            while same_cycle in res:
-                res.remove(same_cycle)
-    return res
+            if c[shift:] + c[:shift] in cycles:
+                cycles.remove(c[shift:] + c[:shift])
+
+    cycles = [list(map(int, list(c))) for c in cycles]
+    return cycles
 
 
 def merge_two_cycles(cycle1, cycle2):
@@ -70,10 +69,3 @@ def generate_transfer_cycle(cycles, num_transfer):
 
     cycles = delete_same_cycle(cycles)
     return cycles
-
-def find_max_cycle_capacity(cycle, capacity_left):
-    max_capacity = float("inf")
-    for u, v in zip(cycle, cycle[1:] + cycle[:1]):
-        if capacity_left[(u, v)] < max_capacity:
-            max_capacity = capacity_left[(u, v)]
-    return max_capacity

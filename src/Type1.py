@@ -5,25 +5,24 @@ class Type1():
     def __init__(self, graph, type1):
         self.graph = graph
         self.type1 = type1
+        self.select_method = None
 
     def solution(self, select_method, *args):
         try:
-            f = getattr(self, select_method)
+            self.select_method = getattr(self, select_method)
 
             type1_ans = []
             for lambdak in self.type1.items():
                 # change decide path methods
                 (Sk, Dk), Uk = lambdak
-                path = f(lambdak, *args)
+                path = self.select_method(lambdak, *args)
                 self.graph.take_path(path, Uk)
                 type1_ans.append((path, Uk))
 
+            return type1_ans
         except Exception:
             raise
 
-        return type1_ans
-
-    # select path method: shortest path
     def shortest_path(self, lambdak):
         (Sk, Dk), Uk = lambdak
         paths = [path for path in self.graph.dfs(Sk, Dk)]
@@ -32,7 +31,6 @@ class Type1():
                 return path
         raise Exception("Cannot Satisfy all Type 1")
 
-    # select path method: least used capacity percentage along the path
     def least_used_capacity_percentage(self, lambdak):
         (Sk, Dk), Uk = lambdak
         paths = [path for path in self.graph.dfs(Sk, Dk)]
@@ -53,7 +51,6 @@ class Type1():
 
         return paths[min_index]
 
-    # select path method: min of max percentage (util/capacity)
     def min_max_percentage(self, lambdak):
         (Sk, Dk), Uk = lambdak
         paths = [path for path in self.graph.dfs(Sk, Dk)]
@@ -75,7 +72,6 @@ class Type1():
 
         return paths[min_max_index]
 
-    # select path method: least conflict with type2
     def least_conflict_value(self, lambdak, type2):
         (Sk, Dk), Uk = lambdak
         paths = [path for path in self.graph.dfs(Sk, Dk)]
@@ -86,7 +82,7 @@ class Type1():
 
                 conflict_value = 0
                 for sigmax in type2.items():
-                    (Sx, Dx), Ux = sigmax
+                    (Sx, Dx), (Ux, dx) = sigmax
                     if Sx not in path or Dx not in path:
                         continue
                     src_indices = np.where(np.array(path) == Sx)[0]
