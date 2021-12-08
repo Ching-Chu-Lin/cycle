@@ -14,7 +14,7 @@ def parse_args():
 def generate_graph(output_file):
     # generate vertices
     num_vertex = random.randrange(3, 10)
-    num_vertex = 7
+    num_vertex = 10
     print(num_vertex, file=output_file)
 
     # generate edge of each vertex
@@ -37,13 +37,13 @@ def generate_graph(output_file):
 
 def generate_type1(num_vertex, output_file):
     M = random.randrange(1, math.perm(num_vertex, 2))
-    M = 3
+    M = 2
     print(M, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
 
     src_des_tuples = sorted(random.sample(pair, k=M))
-    util = [round(random.uniform(0.1, 0.5), 1)for _ in range(M)]
+    util = [round(random.uniform(0.001, 0.005), 4)for _ in range(M)]
     for src_des, u in zip(src_des_tuples, util):
         src, des = src_des
         print("{} {} {}".format(src, des, u), file=output_file)
@@ -53,14 +53,15 @@ def generate_type1(num_vertex, output_file):
 
 def generate_type2(num_vertex, output_file):
     N = random.randrange(1, math.perm(num_vertex, 2))
-    N = 6
+    N = 50
     print(N, file=output_file)
 
     pair = list(itertools.permutations(range(num_vertex), 2))
-    edge_constraint_pool = list(range(1, num_vertex+1))
+    # edge constraint (5, V+1)
+    edge_constraint_pool = list(range(5, num_vertex+1))
 
     src_des_tuples = sorted(random.sample(pair, k=N))
-    util = [round(random.uniform(0.1, 0.5), 1)for _ in range(N)]
+    util = [round(random.uniform(0.001, 0.005), 4)for _ in range(N)]
     edge_constraint = random.choices(edge_constraint_pool, k=N)
 
     for src_des, u, c in zip(src_des_tuples, util, edge_constraint):

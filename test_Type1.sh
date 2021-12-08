@@ -3,11 +3,11 @@ leastcap_arr=(0 0 0)
 min_max__arr=(0 0 0)
 conflict_arr=(0 0 0)
 
-file_name=input/7.in
+file_name=input/10.in
 
-for i in {1..100}
+for i in {1..20}
 do
-    if [ $(($i%10)) = 0 ]
+    if [ $(($i%1)) = 0 ]
     then
         echo "iter = $i"
     fi
