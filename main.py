@@ -45,16 +45,17 @@ def main(args):
 
     # Type1
     try:
+        arguments = [args.Type1_method]
         if args.Type1_method == "least_conflict_value":
-            type1_ans = Type1(graph, type1).solution(
-                "least_conflict_value", type2)
-        else:
-            type1_ans = Type1(graph, type1).solution("shortest_path")
+            arguments.append(type2)
+
+        type1_ans = Type1(graph, type1).solution(*arguments)
 
     except Exception as i:
         print(i)
         exit(1)
 
+    print("find type1")
     # Type2: expected input
     try:
         type2_cycles, type2_routes = Type2(
