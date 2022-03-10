@@ -22,20 +22,33 @@ class Graph():
             print()
         return
 
-    def dfs(self, src, des):
+    def bfs(self, src, des):
         current = [[src]]
         while current:
-            path = current.pop()
-
+            path = current.pop(0)
             for neighbor in self.edges[path[-1]]:
                 if neighbor == des:
                     yield path+[neighbor]
-                    continue
 
                 if neighbor in path:
                     # no more loop
                     continue
-                current.append(path+[neighbor])
+                else:
+                    current.append(path+[neighbor])
+
+    def dfs(self, src, des):
+        current = [[src]]
+        while current:
+            path = current.pop()
+            for neighbor in self.edges[path[-1]]:
+                if neighbor == des:
+                    yield path+[neighbor]
+
+                if neighbor in path:
+                    # no more loop
+                    continue
+                else:
+                    current.append(path+[neighbor])
 
     def check_path_enough_capacity(self, path, util):
         for u, v in zip(path, path[1:]):
@@ -54,12 +67,20 @@ class Graph():
     def get_unique_cycles(self):
         # find small cycles
         cycles = [path for node in range(len(self.vertices))
-                  for path in self.dfs(node, node)]
+                  for path in self.bfs(node, node)]
         # pop last duplicate vertex
         for c in cycles:
             c.pop()
         cycles = utils.delete_same_cycle(cycles)
         return cycles
+
+    def get_big_cycles(self):
+        big_cycles = [path for path in self.bfs(
+            0, 0) if len(path) == len(self.vertices)]
+        # pop last duplicate vertex
+        for c in big_cycles:
+            c.pop()
+        return big_cycles
 
     def find_max_cycle_capacity(self, cycle):
         max_capacity = float("inf")

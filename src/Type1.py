@@ -25,15 +25,15 @@ class Type1():
 
     def shortest_path(self, lambdak):
         (Sk, Dk), Uk = lambdak
-        paths = [path for path in self.graph.dfs(Sk, Dk)]
-        for path in paths:
+
+        for path in self.graph.bfs(Sk, Dk):
             if self.graph.check_path_enough_capacity(path, Uk) == True:
                 return path
         raise Exception("Cannot Satisfy all Type 1")
 
     def least_used_capacity_percentage(self, lambdak):
         (Sk, Dk), Uk = lambdak
-        paths = [path for path in self.graph.dfs(Sk, Dk)]
+        paths = [path for path in self.graph.bfs(Sk, Dk)]
 
         min_index, min_percentage = -1, float("inf")
         for i, path in enumerate(paths):
@@ -53,7 +53,7 @@ class Type1():
 
     def min_max_percentage(self, lambdak):
         (Sk, Dk), Uk = lambdak
-        paths = [path for path in self.graph.dfs(Sk, Dk)]
+        paths = [path for path in self.graph.bfs(Sk, Dk)]
 
         min_max_index, min_max_percentage = -1, float("inf")
         for i, path in enumerate(paths):
@@ -74,7 +74,7 @@ class Type1():
 
     def least_conflict_value(self, lambdak, type2):
         (Sk, Dk), Uk = lambdak
-        paths = [path for path in self.graph.dfs(Sk, Dk)]
+        paths = [path for path in self.graph.bfs(Sk, Dk)]
 
         min_index, min_conflict_value = -1, float("inf")
         for i, path in enumerate(paths):

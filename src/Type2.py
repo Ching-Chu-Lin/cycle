@@ -2,6 +2,7 @@ import collections
 import copy
 import itertools
 import numpy as np
+from . import utils
 
 
 class Type2():
@@ -9,7 +10,7 @@ class Type2():
         self.graph = graph
         self.type2 = type2
         self.solve_method = None
-        self.max_sum_method = None
+        self.max_sum_method = getattr(self, "max_streams_on_cycle")
 
     def solution(self, solve_method, max_sum_method, num_transfer, *args):
         pool = self.graph.get_unique_cycles()
@@ -160,3 +161,80 @@ class Type2():
             for u, v in zip(path, path[1:]):
                 cycle_util[(u, v)] = max(cycle_util[(u, v)], Ux)
         return path
+
+    def big_cycle_and_small_from_src(self):
+
+        graph = copy.deepcopy(self.graph)
+        type2 = copy.deepcopy(self.type2)
+        type2_cycles = []
+        type2_routes = []
+
+        #bigs = self.graph.get_big_cycles()
+        big = None
+        for path in self.graph.bfs(0, 0):
+            if len(path) == len(self.graph.vertices):
+                big = path
+                break
+
+        if big != None:
+            Pi, routes = self.stuff_Type2_on_cycle(graph, type2, c)
+            if len(routes) != 0:
+                type2_cycles.append(Pi)
+                type2_routes.extend(routes)
+
+        for sigmax in list(type2.items()):
+            (Sx, Dx), (Ux, dx) = sigmax
+            if Sx not in c or Dx not in c or Ux == 0:
+                continue
+
+            cycles = [path for path in self.graph.bfs(Sx, Sx)]
+
+            while len(cycles) != 0 and any(type2.values()):
+                # greed selection method
+                c = self.choose_cycle_cover_most(cycles, type2)
+                Pi, routes = self.stuff_Type2_on_cycle(graph, type2, c)
+
+                if len(routes) != 0:
+                    type2_cycles.append(Pi)
+                    type2_routes.extend(routes)
+
+                # if c holds max of which can contain, it cannot holds more
+                # if c cannot hold any remainings, neither can it hold any in the future
+                cycles.remove(c)
+
+        if any(type2.values()):
+            print("type2 left:", type2)
+            raise Exception("Cannot Satisfy all Type 2")
+        return type2_cycles, type2_routes
+
+    def dfs_color_cycle_constant(self):
+        has_cycle = True
+        constant_capacity = 0.5
+        start_node = 0
+
+        while(has_cycle):
+            find = False
+            for node in range(start_node, len(self.graph.vertices)):
+                # copy from get_unique_cycle (bfs vs. dfs)
+                for c in self.graph.dfs(node, node):
+                    print("c:", c)
+                    # no need to pop last duplicate vertex
+                    # remove constant capacity
+                    if self.graph.check_path_enough_capacity(c, constant_capacity):
+                        self.graph.take_path(c, constant_capacity)
+                        self.graph.printGraph()
+
+                        # dfs from this node again since edges may change
+                        start_node = node
+                        find = True
+                        break
+
+                if find:
+                    break
+            if not find:
+                has_cycle = False
+
+        self.graph.printGraph()
+
+    # Further thoughts
+    # hamiliton path / spanning tree
