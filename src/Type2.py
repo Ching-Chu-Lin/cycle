@@ -217,12 +217,12 @@ class Type2():
             for node in range(start_node, len(self.graph.vertices)):
                 # copy from get_unique_cycle (bfs vs. dfs)
                 for c in self.graph.dfs(node, node):
-                    print("c:", c)
                     # no need to pop last duplicate vertex
                     # remove constant capacity
                     if self.graph.check_path_enough_capacity(c, constant_capacity):
                         self.graph.take_path(c, constant_capacity)
-                        self.graph.printGraph()
+                        # self.graph.printGraph()
+                        print("c:", c)
 
                         # dfs from this node again since edges may change
                         start_node = node
