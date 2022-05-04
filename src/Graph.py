@@ -1,6 +1,7 @@
 import collections
 import numpy as np
-
+import networkx as nx
+import matplotlib.pyplot as plt
 from . import utils
 
 
@@ -13,6 +14,29 @@ class Graph():
     def add_edge(self, u, v, c):
         self.edges[u].append(v)
         self.capacity[(u, v)] = c
+        return
+
+    def initVisualization(self):
+        self.nxG = nx.DiGraph()
+        self.nxG.add_nodes_from(self.vertices)
+        self.nxG.add_weighted_edges_from([(*n, w)
+                                          for n, w in list(self.capacity.items())])
+        self.pos = nx.spring_layout(self.nxG)  # pos variable
+
+    def visualizeCycle(self, fig_name, cycle):
+        # cycle path needed to be converted into the form: [(2, 1), (1, 2)]
+        path = [(u, v) for u, v in zip(cycle, cycle[1:])]
+
+        #nx.draw(self.nxG, pos=self.pos, with_labels=True, edgelist=path)
+        nx.draw_networkx_nodes(self.nxG, pos=self.pos, alpha=0.3)
+        nx.draw_networkx_edges(self.nxG, pos=self.pos, edgelist=path)
+
+        # print all edges' weights
+        # edge_weights = nx.get_edge_attributes(self.nxG, 'weight')
+        # nx.draw_networkx_edge_labels(
+        #     self.nxG, self.pos, edge_labels=edge_weights)
+        plt.savefig(fig_name+".pdf")
+        plt.clf()
         return
 
     def printGraph(self):

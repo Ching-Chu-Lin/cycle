@@ -1,6 +1,43 @@
-import collections
 import copy
 import numpy as np
+
+from src.Graph import Graph
+
+
+def parse_input_file(input_file_path):
+    with open(input_file_path) as input_file:
+        # parse number of vertex
+        num_vertex = int(input_file.readline().strip())
+
+        # parse graph
+        graph = Graph(num_vertex)
+        for i in range(num_vertex):
+            start_vertex, neighbor_util = input_file.readline().strip().split(",")
+            neighbor_util = neighbor_util.split(" ")
+            for end_vertex, util in zip(neighbor_util[0::2], neighbor_util[1::2]):
+                graph.add_edge(int(start_vertex), int(end_vertex), float(util))
+
+        # parse input to be routed: type1
+        M = int(input_file.readline().strip())
+        type1 = {}
+        for _ in range(M):
+            src, des, util = input_file.readline().strip().split(" ")
+            type1[int(src), int(des)] = float(util)
+
+        # parse expected utilizations: type2 (util, edge constraint)
+        N = int(input_file.readline().strip())
+        type2 = {}
+        for _ in range(N):
+            src, des, util, edge_constraint = input_file.readline().strip().split(" ")
+            type2[int(src), int(des)] = (float(util), int(edge_constraint))
+
+        # parse constraint 2: max number of transfer
+        num_transfer = int(input_file.readline().strip())
+
+        # init graph visualization
+        graph.initVisualization()
+
+        return graph, type1, type2, num_transfer
 
 
 def delete_same_cycle(cycles):

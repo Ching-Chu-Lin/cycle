@@ -2,7 +2,6 @@ import collections
 import copy
 import itertools
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class Type2():
@@ -206,51 +205,6 @@ class Type2():
             print("type2 left:", type2)
             raise Exception("Cannot Satisfy all Type 2")
         return type2_cycles, type2_routes
-
-    def dfs_color_cycle_constant(self):
-        count_cycle = 0
-        sum_length = 0
-        coverage = set()
-        length_frequency = collections.defaultdict(int)
-
-        has_cycle = True
-        constant_capacity = 0.5
-        start_node = 0
-
-        while(has_cycle):
-            find = False
-            for node in range(start_node, len(self.graph.vertices)):
-                # copy from get_unique_cycle (bfs vs. dfs)
-                for c in self.graph.dfs(node, node):
-                    # no need to pop last duplicate vertex
-                    # remove constant capacity
-                    if self.graph.check_path_enough_capacity(c, constant_capacity):
-                        self.graph.take_path(c, constant_capacity)
-
-                        count_cycle += 1
-                        sum_length += len(c)
-                        coverage.update(c)
-                        length_frequency[len(c)] += 1
-
-                        # self.graph.printGraph()
-                        print("c:", c)
-                        print("# of cycles:", count_cycle)
-                        print("avg len of cycles:", sum_length / count_cycle)
-                        print("coverage:", coverage, "size:", len(coverage))
-
-                        # dfs from this node again since edges may change
-                        start_node = node
-                        find = True
-                        break
-
-                if find:
-                    break
-            if not find:
-                has_cycle = False
-
-        self.graph.printGraph()
-        plt.bar(list(length_frequency.keys()), length_frequency.values())
-        plt.show()
 
     # Further thoughts
     # hamiliton path / spanning tree
