@@ -9,38 +9,39 @@ def main(args):
     graph, type1, type2, num_transfer = utils.parse_input_file(
         args.input_file_path)
 
-    # # Type1
-    # try:
-    #     arguments = [args.Type1_method]
-    #     if args.Type1_method == "least_conflict_value":
-    #         arguments.append(type2)
+    # Type1
+    try:
+        arguments = [args.Type1_method]
+        if args.Type1_method == "least_conflict_value":
+            arguments.append(type2)
 
-    #     type1_ans = Type1(graph, type1).solution(*arguments)
+        type1_ans = Type1(graph, type1).solution(*arguments)
 
-    # except Exception as i:
-    #     print(i)
-    #     exit(1)
+    except Exception as i:
+        print(i)
+        exit(1)
 
-    # print("find type1")
-    # print("type1 paths:", type1_ans)
-    # Type2: expected input
-    # try:
-    #     # type2_cycles, type2_routes = Type2(
-    #     #     graph, type2).solution("greedy", "max_streams_on_cycle", num_transfer)
+    print("find type1")
+    print("type1 paths:", type1_ans)
 
-    #     type2_cycles, type2_routes = Type2(
-    #         graph, type2).big_cycle_and_small_from_src()
+    # Type2
+    try:
+        # type2_cycles, type2_routes = Type2(
+        #     graph, type2).solution("greedy", "max_streams_on_cycle", num_transfer)
 
-    # except Exception as i:
-    #     print(i)
-    #     exit(2)
-    #Type2(graph, type2).dfs_color_cycle_constant()
+        type2_cycles, type2_routes = Type2(
+            graph, type2).big_cycle_and_small_from_src()
 
-    # # output answer
-    # print(args.Type1_method)
-    # print("type1 paths:", type1_ans)
-    # print("type2 routes:", type2_routes)
-    # print("type2 cycles:", type2_cycles)
+    except Exception as i:
+        print(i)
+        exit(2)
+    Type2(graph, type2).dfs_color_cycle_constant()
+
+    # output answer
+    print(args.Type1_method)
+    print("type1 paths:", type1_ans)
+    print("type2 routes:", type2_routes)
+    print("type2 cycles:", type2_cycles)
 
     return 0
 

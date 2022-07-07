@@ -14,16 +14,16 @@ do
 
     python3 generate_test_case.py $file_name
 
-    python3 main.py $file_name shortest_path >> exp_record7
+    python3 main.py $file_name shortest_path >> exp_record
     ((shortest_arr[$?]+=1))
 
-    python3 main.py $file_name least_used_capacity_percentage >> exp_record7
+    python3 main.py $file_name least_used_capacity_percentage >> exp_record
     ((leastcap_arr[$?]+=1))
 
-    python3 main.py $file_name min_max_percentage >> exp_record7
+    python3 main.py $file_name min_max_percentage >> exp_record
     ((min_max__arr[$?]+=1))
 
-    python3 main.py $file_name least_conflict_value >> exp_record7
+    python3 main.py $file_name least_conflict_value >> exp_record
     ((conflict_arr[$?]+=1))
 done
 

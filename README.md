@@ -35,3 +35,12 @@ $ python3 cycle_finding.py <input_file_name>
 ##### src/utils.py
 
 1. functions unrelated to graph
+
+### Automated Shell Script
+
+```bash
+$ bash test_Type1.sh
+```
+
+This is a script for testing automation of different Type1 method.
+Change the file_name variable (line 6) in the script to change the input file.
